@@ -23,38 +23,45 @@ bool hallRead() {
 
 void updateLcdInfo() {
   // display current speed
-  lcd.setCursor(2, 0);
-  if (speed < 100)
-    lcd.print('0');
-  if (speed < 10)
-    lcd.print('0');
-  lcd.print(speed, 3);
-  lcd.print(" km/h ");
+  if (speed < 1000) {
+    lcd.setCursor(2, 0);
+    if (speed < 100)
+      lcd.print('0');
+    if (speed < 10)
+      lcd.print('0');
+    lcd.print(speed, 3);
+    lcd.print(" km/h");
+  }
 
-  lcd.setCursor(0, 1);
   // display distance travelled
-  int distanceDigit =  distance < 1 ? 4 : 4 - int(log10(distance));
-  lcd.print(distance, distanceDigit - 1);
-  lcd.print("km ");
+  if (distance < 1000) {
+    lcd.setCursor(0, 1);
+    int distanceDigit =  distance < 1 ? 4 : 4 - int(log10(distance));
+    lcd.print(distance, distanceDigit - 1);
+    lcd.print("km");
+  }
 
   // display time
   unsigned long milliseconds = millis();
-  int hours = int(milliseconds / 3600000);
-  if (hours < 10)
-    lcd.print('0');
-  lcd.print(hours);
-  lcd.print(':');
+  if (milliseconds < 86400000) {
+    lcd.setCursor(8, 1);
+    int hours = int(milliseconds / 3600000);
+    if (hours < 10)
+      lcd.print('0');
+    lcd.print(hours);
+    lcd.print(':');
 
-  int minutes = (milliseconds - (hours * 3600000)) / 60000;
-  if (minutes < 10)
-    lcd.print('0');
-  lcd.print(minutes);
-  lcd.print(":");
+    int minutes = (milliseconds - (hours * 3600000)) / 60000;
+    if (minutes < 10)
+      lcd.print('0');
+    lcd.print(minutes);
+    lcd.print(":");
 
-  int seconds = (milliseconds - (minutes * 60000)) / 1000;
-  if (seconds < 10)
-    lcd.print('0');
-  lcd.print(seconds);
+    int seconds = (milliseconds - (minutes * 60000)) / 1000;
+    if (seconds < 10)
+      lcd.print('0');
+    lcd.print(seconds);
+  }
 }
 
 void setup() {
