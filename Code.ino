@@ -7,15 +7,10 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 bool hallState = false; // state of the magnetic sensor
 unsigned long hallPrevOn = 0; // last time the sensor was reading ON
 bool hallPrevState = false; // last state of the sensor
-unsigned long hallPrevOnDif = 0; // difference between the previous on time and now
 
-float wheelC = 2; // circumference of wheel in meters
+#define  WHEEL_CIRCUMFERENCE 0.002 // circumference of wheel in km
 double speed = 0; // speep in km/h
 double distance = 0; // distance trvelled\
-
-#define DIGIT_SPEED 3
-#define DIGIT_DISTANCE 4
-#define DIGIT_MINUTES 3
 
 bool hallRead() {
   int iter = 5; // number of values to read
@@ -28,31 +23,38 @@ bool hallRead() {
 
 void updateLcdInfo() {
   // display current speed
-  lcd.setCursor(0, 0);
-  int speedDigit = speed < 1 ? DIGIT_SPEED - 1 : DIGIT_SPEED - log10(speed);
-  lcd.print(speed, speedDigit);
-  lcd.print("km/h ");
+  lcd.setCursor(2, 0);
+  if (speed < 100)
+    lcd.print('0');
+  if (speed < 10)
+    lcd.print('0');
+  lcd.print(speed, 3);
+  lcd.print(" km/h ");
 
-  int distanceDigit = distance < 1 ? DIGIT_DISTANCE - 1 : DIGIT_DISTANCE - log10(distance);
-  lcd.print(distance, distanceDigit);
-  lcd.print("km");
-
-  // display distance travelled
   lcd.setCursor(0, 1);
-  int minutes = round(millis() / 60000);
-  for (int i = 0; i < (minutes < 10 ? DIGIT_MINUTES - 1 : DIGIT_MINUTES - (log10(minutes) + 1)); i++)
+  // display distance travelled
+  int distanceDigit =  distance < 1 ? 4 : 4 - int(log10(distance));
+  lcd.print(distance, distanceDigit - 1);
+  lcd.print("km ");
+
+  // display time
+  unsigned long milliseconds = millis();
+  int hours = int(milliseconds / 3600000);
+  if (hours < 10)
+    lcd.print('0');
+  lcd.print(hours);
+  lcd.print(':');
+
+  int minutes = (milliseconds - (hours * 3600000)) / 60000;
+  if (minutes < 10)
     lcd.print('0');
   lcd.print(minutes);
-  lcd.print("m");
+  lcd.print(":");
 
-  // display time in minutes and seconds only
-  // no hours, minutes dont "reset" at each hour
-  //int seconds = (millis()-(minutes*60000))/1000;
-  int seconds = 0;
+  int seconds = (milliseconds - (minutes * 60000)) / 1000;
   if (seconds < 10)
     lcd.print('0');
   lcd.print(seconds);
-  lcd.print("s ");
 }
 
 void setup() {
@@ -67,11 +69,11 @@ void loop() {
   hallState = hallRead();
 
   if (hallState == true && hallPrevState == false) {
-    hallPrevOnDif = millis() - hallPrevOn;
+    unsigned long hallPrevOnDif = millis() - hallPrevOn;
     hallPrevOn = millis();
 
-    speed = wheelC / hallPrevOnDif * 3600;
-    distance += wheelC / 1000;
+    speed = WHEEL_CIRCUMFERENCE / hallPrevOnDif * 3600000;
+    distance += WHEEL_CIRCUMFERENCE;
   }
 
   updateLcdInfo();
