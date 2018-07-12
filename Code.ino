@@ -3,23 +3,12 @@
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-#define HALL_PIN A2 // pin of the magnetic (hall effect) sensor
-bool hallState = false; // state of the magnetic sensor
+#define HALL_PIN 2 // pin of the magnetic (hall effect) sensor
 unsigned long hallPrevOn = 0; // last time the sensor was reading ON
-bool hallPrevState = false; // last state of the sensor
 
-#define  WHEEL_CIRCUMFERENCE 0.002 // circumference of wheel in km
+#define  WHEEL_CIRCUMFERENCE 0.0020447 // circumference of wheel in km
 double speed = 0; // speep in km/h
 double distance = 0; // distance trvelled\
-
-bool hallRead() {
-  int iter = 5; // number of values to read
-  int sum = 0;
-  for (int i = 0; i < iter; i++) {
-    sum += analogRead(HALL_PIN) < 100;
-  }
-  return (sum / iter) > 0.5;
-}
 
 void updateLcdInfo() {
   // display current speed
@@ -64,24 +53,22 @@ void updateLcdInfo() {
   }
 }
 
+void interruptRoutine() {
+  unsigned long hallPrevOnDif = millis() - hallPrevOn;
+  hallPrevOn = millis();
+
+  speed = WHEEL_CIRCUMFERENCE / hallPrevOnDif * 3600000;
+  distance += WHEEL_CIRCUMFERENCE;
+}
+
 void setup() {
   lcd.begin();
   lcd.backlight();
 
   Serial.begin(9600);
+  attachInterrupt(digitalPinToInterrupt(HALL_PIN), interruptRoutine, FALLING);
 }
 
 void loop() {
-  hallPrevState = hallState;
-  hallState = hallRead();
-
-  if (hallState == true && hallPrevState == false) {
-    unsigned long hallPrevOnDif = millis() - hallPrevOn;
-    hallPrevOn = millis();
-
-    speed = WHEEL_CIRCUMFERENCE / hallPrevOnDif * 3600000;
-    distance += WHEEL_CIRCUMFERENCE;
-  }
-
   updateLcdInfo();
 }
